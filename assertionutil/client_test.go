@@ -356,13 +356,13 @@ func TestGetBool(t *testing.T) {
 func TestGetMap(t *testing.T) {
 	util := NewAssertionUtil()
 
-	nestedMap := map[string]interface{}{"nested": "value"}
+	nestedMap := map[string]any{"nested": "value"}
 
 	tests := []struct {
 		name     string
 		data     map[string]any
 		key      string
-		expected map[string]interface{}
+		expected map[string]any
 		ok       bool
 	}{
 		{
@@ -374,9 +374,9 @@ func TestGetMap(t *testing.T) {
 		},
 		{
 			name:     "empty map",
-			data:     map[string]any{"key": map[string]interface{}{}},
+			data:     map[string]any{"key": map[string]any{}},
 			key:      "key",
-			expected: map[string]interface{}{},
+			expected: map[string]any{},
 			ok:       true,
 		},
 		{
@@ -408,13 +408,13 @@ func TestGetMap(t *testing.T) {
 func TestGetSlice(t *testing.T) {
 	util := NewAssertionUtil()
 
-	slice := []interface{}{"item1", "item2"}
+	slice := []any{"item1", "item2"}
 
 	tests := []struct {
 		name     string
 		data     map[string]any
 		key      string
-		expected []interface{}
+		expected []any
 		ok       bool
 	}{
 		{
@@ -426,7 +426,7 @@ func TestGetSlice(t *testing.T) {
 		},
 		{
 			name:     "empty slice",
-			data:     map[string]any{"key": []interface{}{}},
+			data:     map[string]any{"key": []any{}},
 			key:      "key",
 			expected: nil,
 			ok:       false,
@@ -696,8 +696,8 @@ func TestGetNestedString(t *testing.T) {
 	util := NewAssertionUtil()
 
 	data := map[string]any{
-		"level1": map[string]interface{}{
-			"level2": map[string]interface{}{
+		"level1": map[string]any{
+			"level2": map[string]any{
 				"value": "nested_value",
 				"empty": "",
 			},
@@ -768,9 +768,9 @@ func TestGetNestedString(t *testing.T) {
 func TestGetNestedMap(t *testing.T) {
 	util := NewAssertionUtil()
 
-	innerMap := map[string]interface{}{"value": "test"}
+	innerMap := map[string]any{"value": "test"}
 	data := map[string]any{
-		"level1": map[string]interface{}{
+		"level1": map[string]any{
 			"level2": innerMap,
 		},
 	}
@@ -779,7 +779,7 @@ func TestGetNestedMap(t *testing.T) {
 		name     string
 		data     map[string]any
 		path     []string
-		expected map[string]interface{}
+		expected map[string]any
 		ok       bool
 	}{
 		{
@@ -793,7 +793,7 @@ func TestGetNestedMap(t *testing.T) {
 			name:     "single level",
 			data:     data,
 			path:     []string{"level1"},
-			expected: map[string]interface{}{"level2": innerMap},
+			expected: map[string]any{"level2": innerMap},
 			ok:       true,
 		},
 		{
@@ -1013,8 +1013,8 @@ func BenchmarkGetString(b *testing.B) {
 func BenchmarkGetNestedString(b *testing.B) {
 	util := NewAssertionUtil()
 	data := map[string]any{
-		"level1": map[string]interface{}{
-			"level2": map[string]interface{}{
+		"level1": map[string]any{
+			"level2": map[string]any{
 				"value": "nested_value",
 			},
 		},

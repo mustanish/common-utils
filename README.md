@@ -109,7 +109,7 @@ httpClient.Client.Timeout = 10 * time.Second
 ##### Response Helpers
 - `IsSuccess(resp *http.Response) bool` - Checks if status code is 2xx
 - `ReadBody(resp *http.Response) ([]byte, error)` - Reads response body
-- `DecodeJSON(resp *http.Response, v interface{}) error` - Decodes JSON response
+- `DecodeJSON(resp *http.Response, v any) error` - Decodes JSON response
 - `GetHeader(resp *http.Response, key string) string` - Gets response header
 - `CloseResponse(resp *http.Response)` - Safely closes response body
 
@@ -159,7 +159,7 @@ if !client.IsSuccess(resp) {
     return fmt.Errorf("request failed with status: %d", resp.StatusCode)
 }
 
-var result map[string]interface{}
+var result map[string]any
 if err := client.DecodeJSON(resp, &result); err != nil {
     return fmt.Errorf("failed to decode JSON: %w", err)
 }
@@ -213,8 +213,8 @@ make test
 # Run tests with coverage report
 make test-coverage
 
-# Or using go directly
-go test ./...
+# Run benchmarks
+make benchmark
 ```
 
 ### Assertion Utility
@@ -254,11 +254,11 @@ func main() {
         "name":    "John Doe",
         "age":     30.0,  // JSON numbers are float64
         "active":  true,
-        "profile": map[string]interface{}{
+        "profile": map[string]any{
             "email": "john@example.com",
             "phone": "123-456-7890",
         },
-        "tags": []interface{}{"admin", "user"},
+        "tags": []any{"admin", "user"},
     }
     
     // Basic extraction
@@ -303,8 +303,8 @@ func main() {
 - `GetInt64(m map[string]any, key string) (int64, bool)` - Extract int64 values
 - `GetFloat64(m map[string]any, key string) (float64, bool)` - Extract float64 values
 - `GetBool(m map[string]any, key string) (bool, bool)` - Extract boolean values
-- `GetMap(m map[string]any, key string) (map[string]interface{}, bool)` - Extract nested maps
-- `GetSlice(m map[string]any, key string) ([]interface{}, bool)` - Extract non-empty slices
+- `GetMap(m map[string]any, key string) (map[string]any, bool)` - Extract nested maps
+- `GetSlice(m map[string]any, key string) ([]any, bool)` - Extract non-empty slices
 
 ##### Required Field Validation
 - `GetStringRequired(m map[string]any, key string) (string, error)` - Required string with error
@@ -321,7 +321,7 @@ func main() {
 
 ##### Nested Path Navigation
 - `GetNestedString(m map[string]any, path ...string) (string, bool)` - Navigate nested paths
-- `GetNestedMap(m map[string]any, path ...string) (map[string]interface{}, bool)` - Access nested maps
+- `GetNestedMap(m map[string]any, path ...string) (map[string]any, bool)` - Access nested maps
 
 ##### Validation Utilities
 - `HasKey(m map[string]any, key string) bool` - Check key existence
@@ -347,12 +347,12 @@ score := util.GetNumericAsFloat64(data, "score")      // Handles int, float64, e
 ```go
 // Load configuration from various sources
 config := map[string]any{
-    "server": map[string]interface{}{
+    "server": map[string]any{
         "host": "localhost",
         "port": 8080.0,  // From JSON
         "ssl":  true,
     },
-    "database": map[string]interface{}{
+    "database": map[string]any{
         "url":     "postgres://...",
         "timeout": 30.0,
     },
@@ -438,10 +438,10 @@ The assertion utility is designed for high performance:
 go test ./assertionutil -v
 
 # Run with coverage
-go test ./assertionutil -cover
+make test-coverage
 
 # Run benchmarks
-go test ./assertionutil -bench=. -benchmem
+make benchmark
 ```
 
 ## Development
@@ -454,10 +454,13 @@ git clone https://github.com/mustanish/common-utils.git
 cd common-utils
 
 # Run tests
-go test ./...
+make test
 
 # Build
-go build ./...
+make build
+
+# Run all checks
+make check
 ```
 
 ### 📊 Test Coverage
@@ -468,11 +471,44 @@ Both packages maintain high test coverage:
 
 ```bash
 # Generate coverage report
-go test -cover ./...
+make test-coverage
 
-# Detailed coverage with HTML report
-go test -coverprofile=coverage.out ./...
-go tool cover -html=coverage.out
+# Run all tests
+make test
+
+# Run benchmarks
+make benchmark
+```
+
+### 🔧 Available Make Targets
+
+The project includes a comprehensive Makefile with the following targets:
+
+```bash
+# Development
+make install-tools      # Install development tools (golangci-lint, etc.)
+make tidy              # Tidy and verify dependencies
+
+# Testing
+make test              # Run all tests
+make test-coverage     # Generate coverage report (HTML)
+make test-race         # Run tests with race detection
+make benchmark         # Run benchmark tests
+
+# Building & Quality
+make build             # Build all packages
+make lint              # Basic linting and formatting
+make lint-advanced     # Advanced linting (requires golangci-lint)
+make check             # Run lint, test, and build
+
+# Maintenance
+make clean             # Clean build artifacts
+make security          # Security scan
+make ci                # Full CI pipeline locally
+make release-prep      # Complete release preparation
+
+# Help
+make help              # Show all available targets
 ```
 
 ## Future Utilities
@@ -508,7 +544,7 @@ git clone https://github.com/YOUR_USERNAME/common-utils.git
 cd common-utils
 
 # 3. Verify everything works
-go test ./...
+make test
 ```
 
 ### 📝 How to Contribute
@@ -531,8 +567,10 @@ go test ./...
 
 3. **Test Your Changes**
    ```bash
-   go test ./...
-   go vet ./...
+   make check
+   # Or run individual targets:
+   make test
+   make lint
    ```
 
 4. **Submit a Pull Request**

@@ -1,32 +1,3 @@
-// Package assertionutil provides safe type assertion and extraction utilities
-// for working with map[string]any data structures commonly found in JSON parsing,
-// configuration handling, and dynamic data processing.
-//
-// Features include:
-//   - Safe type assertions with existence checks
-//   - Required field validation with descriptive errors
-//   - Support for common Go types (string, int, int64, float64, bool, map, slice)
-//   - Default value fallbacks for missing or invalid fields
-//   - Numeric type conversion utilities
-//   - Nested path navigation for complex data structures
-//   - Bulk validation for required fields
-//   - Consistent error handling patterns
-//   - Zero-allocation design for performance
-//
-// Example usage:
-//
-//	util := assertionutil.NewAssertionUtil()
-//	data := map[string]any{"name": "John", "age": 30.0, "config": map[string]any{"debug": true}}
-//
-//	// Basic extraction
-//	name, ok := util.GetString(data, "name")
-//	age := util.GetIntWithDefault(data, "age", 0)
-//
-//	// Nested access
-//	debug, _ := util.GetNestedString(data, "config", "debug")
-//
-//	// Validation
-//	err := util.ValidateRequired(data, "name", "email")
 package assertionutil
 
 import "fmt"
@@ -37,8 +8,8 @@ type AssertionClient interface {
 	GetString(m map[string]any, key string) (string, bool)
 	GetStringRequired(m map[string]any, key string) (string, error)
 	GetFloat64(m map[string]any, key string) (float64, bool)
-	GetMap(m map[string]any, key string) (map[string]interface{}, bool)
-	GetSlice(m map[string]any, key string) ([]interface{}, bool)
+	GetMap(m map[string]any, key string) (map[string]any, bool)
+	GetSlice(m map[string]any, key string) ([]any, bool)
 	GetBool(m map[string]any, key string) (bool, bool)
 
 	// Integer type getters
@@ -57,7 +28,7 @@ type AssertionClient interface {
 
 	// Nested path access
 	GetNestedString(m map[string]any, path ...string) (string, bool)
-	GetNestedMap(m map[string]any, path ...string) (map[string]interface{}, bool)
+	GetNestedMap(m map[string]any, path ...string) (map[string]any, bool)
 
 	// Validation utilities
 	HasKey(m map[string]any, key string) bool
@@ -103,9 +74,9 @@ func (a *AssertionUtil) GetFloat64(m map[string]any, key string) (float64, bool)
 }
 
 // GetMap safely extracts a nested map from a map
-func (a *AssertionUtil) GetMap(m map[string]any, key string) (map[string]interface{}, bool) {
+func (a *AssertionUtil) GetMap(m map[string]any, key string) (map[string]any, bool) {
 	if val, exists := m[key]; exists {
-		if subMap, ok := val.(map[string]interface{}); ok {
+		if subMap, ok := val.(map[string]any); ok {
 			return subMap, true
 		}
 	}
@@ -113,9 +84,9 @@ func (a *AssertionUtil) GetMap(m map[string]any, key string) (map[string]interfa
 }
 
 // GetSlice safely extracts a non-empty slice from a map
-func (a *AssertionUtil) GetSlice(m map[string]any, key string) ([]interface{}, bool) {
+func (a *AssertionUtil) GetSlice(m map[string]any, key string) ([]any, bool) {
 	if val, exists := m[key]; exists {
-		if slice, ok := val.([]interface{}); ok && len(slice) > 0 {
+		if slice, ok := val.([]any); ok && len(slice) > 0 {
 			return slice, true
 		}
 	}
@@ -259,7 +230,7 @@ func (a *AssertionUtil) GetNestedString(m map[string]any, path ...string) (strin
 }
 
 // GetNestedMap safely extracts a nested map using a path
-func (a *AssertionUtil) GetNestedMap(m map[string]any, path ...string) (map[string]interface{}, bool) {
+func (a *AssertionUtil) GetNestedMap(m map[string]any, path ...string) (map[string]any, bool) {
 	current := m
 	for _, key := range path {
 		next, ok := a.GetMap(current, key)

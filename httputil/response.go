@@ -13,7 +13,7 @@ func (h *HTTPUtil) ReadBody(resp *http.Response) ([]byte, error) {
 }
 
 // DecodeJSON decodes the response body into the provided struct.
-func (h *HTTPUtil) DecodeJSON(resp *http.Response, v interface{}) error {
+func (h *HTTPUtil) DecodeJSON(resp *http.Response, v any) error {
 	defer resp.Body.Close()
 	return json.NewDecoder(resp.Body).Decode(v)
 }

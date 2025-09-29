@@ -337,7 +337,7 @@ func TestDecodeJSON_InvalidJSON(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			resp := &http.Response{Body: io.NopCloser(bytes.NewBufferString(tc.json))}
-			var result map[string]interface{}
+			var result map[string]any
 			err := util.DecodeJSON(resp, &result)
 			if err == nil {
 				t.Errorf("Expected JSON decode error for %s", tc.name)
