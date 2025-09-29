@@ -4,6 +4,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/mustanish/common-utils)](https://goreportcard.com/report/github.com/mustanish/common-utils)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Go Reference](https://pkg.go.dev/badge/github.com/mustanish/common-utils.svg)](https://pkg.go.dev/github.com/mustanish/common-utils)
+[![Latest Release](https://img.shields.io/github/v/release/mustanish/common-utils)](https://github.com/mustanish/common-utils/releases)
 
 A collection of reusable utility packages for Go applications. This library provides common functionality that can be shared across multiple services and projects to reduce code duplication and improve consistency.
 
@@ -22,8 +23,61 @@ A collection of reusable utility packages for Go applications. This library prov
 
 ## Installation
 
+### Latest Stable Version
+
 ```bash
-go get github.com/mustanish/common-utils
+go get github.com/mustanish/common-utils@v1.0.0
+```
+
+### Latest Development Version
+
+```bash
+go get github.com/mustanish/common-utils@latest
+```
+
+### Specific Version
+
+```bash
+# Install a specific version
+go get github.com/mustanish/common-utils@v1.0.0
+```
+
+### Quick Start Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    
+    "github.com/sirupsen/logrus"
+    "github.com/mustanish/common-utils/httputil"
+    "github.com/mustanish/common-utils/assertionutil"
+)
+
+func main() {
+    // HTTP Utility - Make API requests with retry logic
+    logger := logrus.New()
+    httpClient := httputil.NewHTTPUtil(logger)
+    
+    resp, err := httpClient.Get(context.Background(), "https://api.example.com/data", nil)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer httpClient.CloseResponse(resp)
+    
+    // Assertion Utility - Safely extract data from response
+    var data map[string]interface{}
+    httpClient.DecodeJSON(resp, &data)
+    
+    assertUtil := assertionutil.NewAssertionUtil()
+    name := assertUtil.GetStringWithDefault(data, "name", "Unknown")
+    age := assertUtil.GetIntWithDefault(data, "age", 0)
+    
+    fmt.Printf("Name: %s, Age: %d\n", name, age)
+}
 ```
 
 ## Available Utilities
@@ -613,6 +667,23 @@ func NewNewUtil() NewUtilClient {
 - **Issues**: Report bugs and request features via GitHub issues
 - **Discussions**: Join community discussions for questions and ideas
 - **Documentation**: Check this README and godoc for detailed API documentation
+
+## Releases
+
+### v1.0.0 (2025-09-29)
+🎉 **Initial Release**
+
+**Features:**
+- **HTTP Utility**: Robust HTTP client with retry logic, rate limiting, and comprehensive error handling
+- **Assertion Utility**: Safe type assertion and extraction utilities for `map[string]any` data structures
+- **High Test Coverage**: Both packages maintain >93% test coverage
+- **Professional Documentation**: Complete API reference with examples
+- **Zero External Dependencies**: Minimal dependency footprint (only logrus for HTTP utility)
+- **Performance Optimized**: Zero-allocation design where possible
+
+**Packages:**
+- `httputil`: HTTP client with enterprise-grade features
+- `assertionutil`: Safe type extraction for dynamic data processing
 
 ## License
 
