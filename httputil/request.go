@@ -145,7 +145,7 @@ func (h *HTTPUtil) doRequest(opts RequestOptions) (*http.Response, error) {
 			}
 		}
 
-		h.Logger.WithFields(logrus.Fields{"wait_time": waitTime}).Info("Waiting before next retry due to rate limiting")
+		h.Logger.WithFields(logrus.Fields{"wait_time": waitTime}).Info("Waiting before next retry")
 		select {
 		case <-opts.Context.Done():
 			h.Logger.WithError(opts.Context.Err()).Warn("Request cancelled during retry wait")

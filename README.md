@@ -10,7 +10,7 @@ A collection of reusable utility packages for Go applications. This library prov
 
 ## Requirements
 
-- **Go 1.22+** - This module requires Go version 1.22 or higher
+- **Go 1.19+** - This module requires Go version 1.19 or higher
 
 ## Table of Contents
 
@@ -27,7 +27,7 @@ A collection of reusable utility packages for Go applications. This library prov
 ### Latest Stable Version
 
 ```bash
-go get github.com/mustanish/common-utils@v1.0.0
+go get github.com/mustanish/common-utils@v1.1.0
 ```
 
 ### Latest Development Version
@@ -40,7 +40,7 @@ go get github.com/mustanish/common-utils@latest
 
 ```bash
 # Install a specific version
-go get github.com/mustanish/common-utils@v1.0.0
+go get github.com/mustanish/common-utils@v1.1.0
 ```
 
 ### Quick Start Example
@@ -943,6 +943,31 @@ func NewNewUtil() NewUtilClient {
 - **Documentation**: Check this README and godoc for detailed API documentation
 
 ## Releases
+
+### v1.2.0 (2025-10-02)
+🔧 **Compatibility & Enhancement Update**
+
+**Changes:**
+- **Go Version**: Updated minimum Go version requirement from 1.22 to 1.19 for broader compatibility
+- **HTTP Utility**: Improved logging message for retry operations to be more concise
+- **Documentation**: Updated README with latest version references and enhanced examples
+
+**Compatibility:**
+- Maintains full backward compatibility with existing API
+- Expanded Go version support for legacy projects
+
+### v1.1.0 (2025-09-30)
+✨ **Collection Utility Release**
+
+**Features:**
+- **Collection Utility**: Comprehensive collection operations and type conversions
+- **Advanced Operations**: Set operations (intersection, union, difference), functional programming
+- **Type Conversion**: Safe conversion between different types with error handling
+- **Performance Optimized**: Leverages optimized algorithms for maximum efficiency
+- **High Test Coverage**: 85.5% coverage for collection utility
+
+**Packages:**
+- `collectionutil`: Advanced collection manipulation and type conversion utilities
 
 ### v1.0.0 (2025-09-29)
 🎉 **Initial Release**
