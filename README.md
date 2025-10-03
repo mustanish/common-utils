@@ -27,20 +27,20 @@ A collection of reusable utility packages for Go applications. This library prov
 ### Latest Stable Version
 
 ```bash
-go get github.com/mustanish/common-utils@v2.0.0
+go get github.com/mustanish/common-utils/v2@v2.0.0
 ```
 
 ### Latest Development Version
 
 ```bash
-go get github.com/mustanish/common-utils@latest
+go get github.com/mustanish/common-utils/v2@latest
 ```
 
 ### Specific Version
 
 ```bash
 # Install a specific version
-go get github.com/mustanish/common-utils@v2.0.0
+go get github.com/mustanish/common-utils/v2@v2.0.0
 ```
 
 ### Quick Start Example
@@ -54,9 +54,9 @@ import (
     "log"
     
     "github.com/sirupsen/logrus"
-    "github.com/mustanish/common-utils/httputil"
-    "github.com/mustanish/common-utils/assertionutil"
-    "github.com/mustanish/common-utils/collectionutil"
+    "github.com/mustanish/common-utils/v2/httputil"
+    "github.com/mustanish/common-utils/v2/assertionutil"
+    "github.com/mustanish/common-utils/v2/collectionutil"
 )
 
 func main() {
@@ -113,7 +113,7 @@ import (
     "bytes"
     
     "github.com/sirupsen/logrus"
-    "github.com/mustanish/common-utils/httputil"
+    "github.com/mustanish/common-utils/v2/httputil"
 )
 
 func main() {
@@ -321,7 +321,7 @@ import (
     "fmt"
     "log"
     
-    "github.com/mustanish/common-utils/assertionutil"
+    "github.com/mustanish/common-utils/v2/assertionutil"
 )
 
 func main() {
@@ -549,7 +549,7 @@ import (
     "fmt"
     "log"
     
-    "github.com/mustanish/common-utils/collectionutil"
+    "github.com/mustanish/common-utils/v2/collectionutil"
 )
 
 func main() {
@@ -862,7 +862,7 @@ make help              # Show all available targets
 This library is designed to grow with additional utilities. Each utility follows a consistent pattern:
 
 ```go
-import "github.com/mustanish/common-utils/{utilname}"
+import "github.com/mustanish/common-utils/v2/{utilname}"
 
 // Create utility instance
 util := utilname.New{UtilName}()

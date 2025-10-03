@@ -1,4 +1,4 @@
-module github.com/mustanish/common-utils
+module github.com/mustanish/common-utils/v2
 
 go 1.19
 
