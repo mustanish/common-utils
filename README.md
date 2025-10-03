@@ -145,14 +145,14 @@ func main() {
 
 #### Configuration
 
-Super simple configuration - just set what you want to override, everything else uses defaults automatically:
+Simple configuration - just set what you want to override, everything else uses defaults automatically:
 
 ##### **1. All Defaults**
 ```go
 client := httputil.NewHTTPUtil(logger, nil)
 ```
 
-##### **2. Override Only What You Need - SUPER SIMPLE! 🎉**
+##### **2. Override Only What You Need**
 ```go
 client := httputil.NewHTTPUtil(logger, &httputil.HTTPConfig{
     ClientTimeout:       3 * time.Minute, // Custom timeout
@@ -175,7 +175,7 @@ client := httputil.NewHTTPUtil(logger, &httputil.HTTPConfig{
 })
 ```
 
-**That's it!** If you set a property, it uses your value. If you don't set it (or it's zero-value), it uses the default. No complex builders, no pointers, no helper functions - just simple struct initialization.
+**Simple rule:** If you set a property, it uses your value. If you don't set it, it uses the default.
 
 #### Available Methods
 
@@ -967,12 +967,11 @@ func NewNewUtil() NewUtilClient {
 
 **BREAKING CHANGES:**
 - **HTTP Utility Constructor**: `NewHTTPUtil(logger, config)` now requires configuration parameter
-- **Simplified Configuration**: Removed complex builder patterns in favor of simple struct-based configuration
-- **Smart Defaults**: Pass `nil` for config to use all defaults, or set only properties you want to override
+- **Simplified Configuration**: New configuration approach for easier usage
 
 **New Features:**
-- **Simple Override Pattern**: Set only the config properties you want to change, everything else uses defaults automatically
-- **Zero-Value Detection**: Non-zero values override defaults, zero values use defaults
+- **Simple Override**: Set only the config properties you want to change, everything else uses defaults automatically
+- **Smart Defaults**: Pass `nil` for config to use all defaults
 - **Cleaner API**: Single constructor with intuitive configuration behavior
 
 **Migration Guide:**
