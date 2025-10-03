@@ -27,7 +27,7 @@ A collection of reusable utility packages for Go applications. This library prov
 ### Latest Stable Version
 
 ```bash
-go get github.com/mustanish/common-utils@v1.1.0
+go get github.com/mustanish/common-utils@v2.0.0
 ```
 
 ### Latest Development Version
@@ -40,7 +40,7 @@ go get github.com/mustanish/common-utils@latest
 
 ```bash
 # Install a specific version
-go get github.com/mustanish/common-utils@v1.1.0
+go get github.com/mustanish/common-utils@v2.0.0
 ```
 
 ### Quick Start Example
@@ -62,7 +62,7 @@ import (
 func main() {
     // HTTP Utility - Make API requests with retry logic
     logger := logrus.New()
-    httpClient := httputil.NewHTTPUtil(logger)
+    httpClient := httputil.NewHTTPUtil(logger, nil)
     
     resp, err := httpClient.Get(context.Background(), "https://api.example.com/data", nil)
     if err != nil {
@@ -121,8 +121,8 @@ func main() {
     logger := logrus.New()
     logger.SetLevel(logrus.InfoLevel)
     
-    // Create HTTP client
-    client := httputil.NewHTTPUtil(logger)
+    // Create HTTP client with default configuration
+    client := httputil.NewHTTPUtil(logger, nil)
     
     // Make a GET request
     resp, err := client.Get(context.Background(), "https://api.example.com/data", nil)
@@ -145,19 +145,37 @@ func main() {
 
 #### Configuration
 
+Super simple configuration - just set what you want to override, everything else uses defaults automatically:
+
+##### **1. All Defaults**
 ```go
-// Create with custom configuration
-client := httputil.NewHTTPUtil(logger)
-httpClient := client.(*httputil.HTTPUtil)
-
-// Configure retry settings
-httpClient.MaxRetries = 3
-httpClient.InitialWait = 2 * time.Second
-httpClient.MaxWait = 30 * time.Second
-
-// Set custom HTTP client timeout
-httpClient.Client.Timeout = 10 * time.Second
+client := httputil.NewHTTPUtil(logger, nil)
 ```
+
+##### **2. Override Only What You Need - SUPER SIMPLE! 🎉**
+```go
+client := httputil.NewHTTPUtil(logger, &httputil.HTTPConfig{
+    ClientTimeout:       3 * time.Minute, // Custom timeout
+    MaxRetries:          2,                // Fewer retries  
+    MaxIdleConnsPerHost: 30,               // Custom pool size
+    // Everything else = defaults automatically!
+})
+```
+
+##### **3. Different Override Example**
+```go
+client := httputil.NewHTTPUtil(logger, &httputil.HTTPConfig{
+    TLSHandshakeTimeout: 15 * time.Second,
+    DisableCompression:  true,
+    RetryOnStatus: []int{
+        http.StatusInternalServerError,
+        http.StatusBadGateway,
+    },
+    // All other settings = defaults
+})
+```
+
+**That's it!** If you set a property, it uses your value. If you don't set it (or it's zero-value), it uses the default. No complex builders, no pointers, no helper functions - just simple struct initialization.
 
 #### Available Methods
 
@@ -943,6 +961,33 @@ func NewNewUtil() NewUtilClient {
 - **Documentation**: Check this README and godoc for detailed API documentation
 
 ## Releases
+
+### v2.0.0 (2025-10-04)
+🚀 **Major Release - Configuration Overhaul**
+
+**BREAKING CHANGES:**
+- **HTTP Utility Constructor**: `NewHTTPUtil(logger, config)` now requires configuration parameter
+- **Simplified Configuration**: Removed complex builder patterns in favor of simple struct-based configuration
+- **Smart Defaults**: Pass `nil` for config to use all defaults, or set only properties you want to override
+
+**New Features:**
+- **Simple Override Pattern**: Set only the config properties you want to change, everything else uses defaults automatically
+- **Zero-Value Detection**: Non-zero values override defaults, zero values use defaults
+- **Cleaner API**: Single constructor with intuitive configuration behavior
+
+**Migration Guide:**
+```go
+// v1.x
+client := httputil.NewHTTPUtil(logger)
+
+// v2.x
+client := httputil.NewHTTPUtil(logger, nil) // for defaults
+// OR
+client := httputil.NewHTTPUtil(logger, &httputil.HTTPConfig{
+    ClientTimeout: 3 * time.Minute, // only override what you need
+    MaxRetries:    2,
+})
+```
 
 ### v1.2.0 (2025-10-02)
 🔧 **Compatibility & Enhancement Update**

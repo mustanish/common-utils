@@ -10,6 +10,54 @@ import (
 	"github.com/thoas/go-funk"
 )
 
+// HTTPConfig holds configuration for HTTP transport settings
+type HTTPConfig struct {
+	// Client timeouts
+	ClientTimeout time.Duration
+
+	// Transport settings
+	DisableCompression    bool
+	ForceAttemptHTTP2     bool
+	MaxIdleConnsPerHost   int
+	MaxIdleConns          int
+	IdleConnTimeout       time.Duration
+	TLSHandshakeTimeout   time.Duration
+	ExpectContinueTimeout time.Duration
+	ResponseHeaderTimeout time.Duration
+
+	// Retry settings
+	MaxRetries    int
+	InitialWait   time.Duration
+	MaxWait       time.Duration
+	RetryOnStatus []int
+}
+
+// DefaultHTTPConfig returns default configuration
+func DefaultHTTPConfig() *HTTPConfig {
+	return &HTTPConfig{
+		ClientTimeout:         10 * time.Minute,
+		DisableCompression:    false,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConnsPerHost:   20,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   30 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+		ResponseHeaderTimeout: 60 * time.Second,
+		MaxRetries:            5,
+		InitialWait:           5 * time.Second,
+		MaxWait:               60 * time.Second,
+		RetryOnStatus: []int{
+			http.StatusRequestTimeout,
+			http.StatusTooManyRequests,
+			http.StatusInternalServerError,
+			http.StatusBadGateway,
+			http.StatusServiceUnavailable,
+			http.StatusGatewayTimeout,
+		},
+	}
+}
+
 // HTTPClient defines the interface for the custom HTTP client
 type HTTPClient interface {
 	Get(ctx context.Context, url string, headers map[string]string) (*http.Response, error)
@@ -41,34 +89,69 @@ type HTTPUtil struct {
 	SuccessHook func(resp *http.Response, options RequestOptions)
 }
 
-// NewHTTPUtil creates a new HTTP client with default settings
-func NewHTTPUtil(logger *logrus.Logger) HTTPClient {
+// NewHTTPUtil creates a new HTTP client with configuration
+// Pass nil for config to use all defaults, or pass config with only the properties you want to override
+func NewHTTPUtil(logger *logrus.Logger, config *HTTPConfig) HTTPClient {
+	defaults := DefaultHTTPConfig()
+
+	if config != nil {
+		if config.ClientTimeout != 0 {
+			defaults.ClientTimeout = config.ClientTimeout
+		}
+		if config.MaxIdleConnsPerHost != 0 {
+			defaults.MaxIdleConnsPerHost = config.MaxIdleConnsPerHost
+		}
+		if config.MaxIdleConns != 0 {
+			defaults.MaxIdleConns = config.MaxIdleConns
+		}
+		if config.IdleConnTimeout != 0 {
+			defaults.IdleConnTimeout = config.IdleConnTimeout
+		}
+		if config.TLSHandshakeTimeout != 0 {
+			defaults.TLSHandshakeTimeout = config.TLSHandshakeTimeout
+		}
+		if config.ExpectContinueTimeout != 0 {
+			defaults.ExpectContinueTimeout = config.ExpectContinueTimeout
+		}
+		if config.ResponseHeaderTimeout != 0 {
+			defaults.ResponseHeaderTimeout = config.ResponseHeaderTimeout
+		}
+		if config.MaxRetries != 0 {
+			defaults.MaxRetries = config.MaxRetries
+		}
+		if config.InitialWait != 0 {
+			defaults.InitialWait = config.InitialWait
+		}
+		if config.MaxWait != 0 {
+			defaults.MaxWait = config.MaxWait
+		}
+		if config.RetryOnStatus != nil {
+			defaults.RetryOnStatus = config.RetryOnStatus
+		}
+
+		defaults.DisableCompression = config.DisableCompression
+		defaults.ForceAttemptHTTP2 = config.ForceAttemptHTTP2
+	}
+
 	client := &HTTPUtil{
 		Client: &http.Client{
-			Timeout: 10 * time.Minute,
+			Timeout: defaults.ClientTimeout,
 			Transport: &http.Transport{
-				MaxIdleConns:          100,
-				MaxIdleConnsPerHost:   20,
-				IdleConnTimeout:       90 * time.Second,
-				TLSHandshakeTimeout:   30 * time.Second,
-				ExpectContinueTimeout: 1 * time.Second,
-				DisableCompression:    false,
-				ForceAttemptHTTP2:     true,
-				ResponseHeaderTimeout: 60 * time.Second,
+				DisableCompression:    defaults.DisableCompression,
+				ForceAttemptHTTP2:     defaults.ForceAttemptHTTP2,
+				MaxIdleConnsPerHost:   defaults.MaxIdleConnsPerHost,
+				MaxIdleConns:          defaults.MaxIdleConns,
+				IdleConnTimeout:       defaults.IdleConnTimeout,
+				TLSHandshakeTimeout:   defaults.TLSHandshakeTimeout,
+				ExpectContinueTimeout: defaults.ExpectContinueTimeout,
+				ResponseHeaderTimeout: defaults.ResponseHeaderTimeout,
 			},
 		},
-		MaxRetries:  5,
-		InitialWait: 5 * time.Second,
-		MaxWait:     60 * time.Second,
-		Logger:      logger,
-		RetryOnStatus: []int{
-			http.StatusRequestTimeout,
-			http.StatusTooManyRequests,
-			http.StatusInternalServerError,
-			http.StatusBadGateway,
-			http.StatusServiceUnavailable,
-			http.StatusGatewayTimeout,
-		},
+		MaxRetries:    defaults.MaxRetries,
+		InitialWait:   defaults.InitialWait,
+		MaxWait:       defaults.MaxWait,
+		Logger:        logger,
+		RetryOnStatus: defaults.RetryOnStatus,
 	}
 
 	// Set default hooks
