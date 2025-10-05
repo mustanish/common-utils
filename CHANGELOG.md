@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v2.2.0] - 2025-10-05
+
+### Changed
+- **CollectionUtil**: Simplified `ConvertToMap()` method - now expects slice of Key/Value maps instead of using key extractor function
+
 ## [v2.1.0] - 2024-10-05
 
 ### Added

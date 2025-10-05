@@ -13,7 +13,7 @@ A collection of reusable utility packages for Go applications. This library prov
 ### Latest Stable Version
 
 ```bash
-go get github.com/mustanish/common-utils/v2@v2.1.0
+go get github.com/mustanish/common-utils/v2@v2.2.0
 ```
 
 ### Latest Development Version
@@ -26,7 +26,7 @@ go get github.com/mustanish/common-utils/v2@latest
 
 ```bash
 # Install a specific version
-go get github.com/mustanish/common-utils/v2@v2.1.0
+go get github.com/mustanish/common-utils/v2@v2.2.0
 ```
 
 ## Quick Start

@@ -24,7 +24,7 @@ type CollectionClient interface {
 	ConvertToBool(value any) (bool, error)
 	ConvertToString(value any) string
 	ConvertToSlice(value any, separator string) ([]string, error)
-	ConvertToMap(slice any, keyExtractor func(any) string) (map[string]any, error)
+	ConvertToMap(slice any) (map[string]any, error)
 
 	// Slice operations
 	SliceContains(slice []string, item string) bool
@@ -239,23 +239,35 @@ func (c *CollectionUtil) ConvertToSlice(value any, separator string) ([]string, 
 	return parts, nil
 }
 
-// ConvertToMap converts a slice to a map using a key extractor function
-func (c *CollectionUtil) ConvertToMap(slice any, keyExtractor func(any) string) (map[string]any, error) {
-	if slice == nil {
-		return map[string]any{}, nil
-	}
-
-	// Use reflection to handle different slice types
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice && rv.Kind() != reflect.Array {
-		return nil, fmt.Errorf("expected slice or array, got %T", slice)
+// ConvertToMap converts a slice of key-value maps to a single map
+func (c *CollectionUtil) ConvertToMap(value any) (map[string]any, error) {
+	slice, ok := value.([]any)
+	if !ok {
+		return nil, fmt.Errorf("expected slice of interfaces for Map conversion, got %T", value)
 	}
 
 	result := make(map[string]any)
-	for i := 0; i < rv.Len(); i++ {
-		item := rv.Index(i).Interface()
-		key := keyExtractor(item)
-		result[key] = item
+	for i, item := range slice {
+		mapItem, ok := item.(map[string]any)
+		if !ok {
+			return nil, fmt.Errorf("expected map[string]any at index %d, got %T", i, item)
+		}
+
+		key, keyOk := mapItem["Key"].(string)
+		if !keyOk {
+			keyAny, exists := mapItem["Key"]
+			if !exists {
+				return nil, fmt.Errorf("missing 'Key' field at index %d", i)
+			}
+			key = c.ConvertToString(keyAny)
+		}
+
+		val, exists := mapItem["Value"]
+		if !exists {
+			return nil, fmt.Errorf("missing 'Value' field at index %d", i)
+		}
+
+		result[key] = val
 	}
 
 	return result, nil
