@@ -1,6 +1,7 @@
 package collectionutil
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 )
@@ -225,60 +226,102 @@ func TestConvertToSlice(t *testing.T) {
 func TestConvertToMap(t *testing.T) {
 	util := NewCollectionUtil()
 
-	// Test successful conversion
-	input := []any{
-		map[string]any{"Key": "name", "Value": "John"},
-		map[string]any{"Key": "age", "Value": 30},
+	// Test data structures
+	type Person struct {
+		Name string
+		Age  int
 	}
 
-	expected := map[string]any{
-		"name": "John",
-		"age":  30,
+	people := []Person{
+		{Name: "Alice", Age: 30},
+		{Name: "Bob", Age: 25},
+		{Name: "Charlie", Age: 35},
 	}
 
-	result, err := util.ConvertToMap(input)
-	if err != nil {
-		t.Errorf("ConvertToMap() error = %v", err)
-		return
-	}
+	stringSlice := []string{"apple", "banana", "cherry"}
+	intSlice := []int{1, 2, 3}
 
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("ConvertToMap() = %v, want %v", result, expected)
-	}
-
-	// Test error cases
-	errorTests := []struct {
-		name  string
-		input any
+	tests := []struct {
+		name         string
+		input        any
+		keyExtractor func(any) string
+		expected     map[string]any
+		expectErr    bool
 	}{
-		{"non-slice input", "not a slice"},
-		{"slice with non-map item", []any{"string"}},
-		{"slice with map missing Key", []any{map[string]any{"Value": "test"}}},
-		{"slice with map missing Value", []any{map[string]any{"Key": "test"}}},
+		{
+			name:  "convert person slice to map by name",
+			input: people,
+			keyExtractor: func(item any) string {
+				person := item.(Person)
+				return person.Name
+			},
+			expected: map[string]any{
+				"Alice":   Person{Name: "Alice", Age: 30},
+				"Bob":     Person{Name: "Bob", Age: 25},
+				"Charlie": Person{Name: "Charlie", Age: 35},
+			},
+			expectErr: false,
+		},
+		{
+			name:  "convert string slice to map with index as key",
+			input: stringSlice,
+			keyExtractor: func(item any) string {
+				return item.(string)
+			},
+			expected: map[string]any{
+				"apple":  "apple",
+				"banana": "banana",
+				"cherry": "cherry",
+			},
+			expectErr: false,
+		},
+		{
+			name:  "convert int slice to map with string representation as key",
+			input: intSlice,
+			keyExtractor: func(item any) string {
+				return fmt.Sprintf("key_%d", item.(int))
+			},
+			expected: map[string]any{
+				"key_1": 1,
+				"key_2": 2,
+				"key_3": 3,
+			},
+			expectErr: false,
+		},
+		{
+			name:         "nil slice",
+			input:        nil,
+			keyExtractor: func(item any) string { return "key" },
+			expected:     map[string]any{},
+			expectErr:    false,
+		},
+		{
+			name:         "empty slice",
+			input:        []string{},
+			keyExtractor: func(item any) string { return item.(string) },
+			expected:     map[string]any{},
+			expectErr:    false,
+		},
+		{
+			name:         "non-slice input",
+			input:        "not a slice",
+			keyExtractor: func(item any) string { return "key" },
+			expected:     nil,
+			expectErr:    true,
+		},
 	}
 
-	for _, tt := range errorTests {
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := util.ConvertToMap(tt.input)
-			if err == nil {
-				t.Errorf("ConvertToMap(%v) should return error", tt.input)
+			result, err := util.ConvertToMap(tt.input, tt.keyExtractor)
+			if (err != nil) != tt.expectErr {
+				t.Errorf("ConvertToMap() error = %v, expectErr %v", err, tt.expectErr)
+				return
+			}
+			if !reflect.DeepEqual(result, tt.expected) {
+				t.Errorf("ConvertToMap() = %v, want %v", result, tt.expected)
 			}
 		})
-	}
-
-	// Test with non-string key (should convert)
-	inputWithIntKey := []any{
-		map[string]any{"Key": 123, "Value": "converted"},
-	}
-
-	result, err = util.ConvertToMap(inputWithIntKey)
-	if err != nil {
-		t.Errorf("ConvertToMap() with int key error = %v", err)
-		return
-	}
-
-	if result["123"] != "converted" {
-		t.Errorf("ConvertToMap() should convert non-string key to string")
 	}
 }
 
@@ -471,58 +514,6 @@ func TestSliceUnion(t *testing.T) {
 	}
 }
 
-func TestGroupBy(t *testing.T) {
-	util := NewCollectionUtil()
-
-	data := []any{
-		map[string]any{"category": "fruit", "name": "apple"},
-		map[string]any{"category": "fruit", "name": "banana"},
-		map[string]any{"category": "vegetable", "name": "carrot"},
-		map[string]any{"category": "vegetable", "name": "lettuce"},
-	}
-
-	result := util.GroupBy(data, func(item any) any {
-		return item.(map[string]any)["category"]
-	})
-
-	if len(result) != 2 {
-		t.Errorf("GroupBy should create 2 groups, got %d", len(result))
-	}
-
-	if len(result["fruit"]) != 2 {
-		t.Errorf("GroupBy fruit group should have 2 items, got %d", len(result["fruit"]))
-	}
-
-	if len(result["vegetable"]) != 2 {
-		t.Errorf("GroupBy vegetable group should have 2 items, got %d", len(result["vegetable"]))
-	}
-}
-
-func TestReduce(t *testing.T) {
-	util := NewCollectionUtil()
-
-	numbers := []any{1, 2, 3, 4, 5}
-
-	// Sum all numbers
-	sum := util.Reduce(numbers, func(acc, item any) any {
-		return acc.(int) + item.(int)
-	}, 0)
-
-	if sum != 15 {
-		t.Errorf("Reduce sum = %v, want 15", sum)
-	}
-
-	// Concatenate strings
-	words := []any{"hello", " ", "world", "!"}
-	sentence := util.Reduce(words, func(acc, item any) any {
-		return acc.(string) + item.(string)
-	}, "")
-
-	if sentence != "hello world!" {
-		t.Errorf("Reduce concatenation = %v, want 'hello world!'", sentence)
-	}
-} // =================== Test Slice Operations ===================
-
 func TestSliceContains(t *testing.T) {
 	util := NewCollectionUtil()
 	slice := []string{"apple", "banana", "cherry"}
@@ -642,39 +633,6 @@ func TestMapOmit(t *testing.T) {
 
 // =================== Test Utility Methods ===================
 
-func TestDeepCopy(t *testing.T) {
-	util := NewCollectionUtil()
-
-	original := map[string]any{
-		"name": "John",
-		"nested": map[string]any{
-			"age": 30,
-		},
-		"list": []any{1, 2, 3},
-	}
-
-	copied, err := util.DeepCopy(original)
-	if err != nil {
-		t.Errorf("DeepCopy() error = %v", err)
-		return
-	}
-
-	copiedMap := copied.(map[string]any)
-
-	// Modify the copy
-	copiedMap["name"] = "Jane"
-	copiedMap["nested"].(map[string]any)["age"] = 25
-
-	// Original should be unchanged
-	if original["name"] != "John" {
-		t.Error("Original map was modified")
-	}
-
-	if original["nested"].(map[string]any)["age"] != 30 {
-		t.Error("Original nested map was modified")
-	}
-}
-
 func TestFindInSlice(t *testing.T) {
 	util := NewCollectionUtil()
 	slice := []any{1, "hello", 3.14, true}
@@ -701,22 +659,6 @@ func TestFindInSlice(t *testing.T) {
 
 	if found {
 		t.Error("FindInSlice should not find non-existent item")
-	}
-}
-
-func TestFlatten(t *testing.T) {
-	util := NewCollectionUtil()
-	input := []any{
-		1,
-		[]any{2, 3},
-		4,
-		[]any{5, 6, 7},
-	}
-	expected := []any{1, 2, 3, 4, 5, 6, 7}
-
-	result := util.Flatten(input)
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Flatten(%v) = %v, want %v", input, result, expected)
 	}
 }
 

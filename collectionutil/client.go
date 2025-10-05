@@ -23,8 +23,8 @@ type CollectionClient interface {
 	ConvertToFloat64(value any) (float64, error)
 	ConvertToBool(value any) (bool, error)
 	ConvertToString(value any) string
-	ConvertToMap(value any) (map[string]any, error)
 	ConvertToSlice(value any, separator string) ([]string, error)
+	ConvertToMap(slice any, keyExtractor func(any) string) (map[string]any, error)
 
 	// Slice operations
 	SliceContains(slice []string, item string) bool
@@ -44,16 +44,12 @@ type CollectionClient interface {
 	MapOmit(m map[string]any, keys ...string) map[string]any
 
 	// Utility methods
-	DeepCopy(src any) (any, error)
 	FindInSlice(slice []any, predicate func(any) bool) (any, bool)
-	Flatten(slice []any) []any
 
-	// Additional go-funk powered methods
+	// Additional slice operations
 	SliceIntersection(slice1, slice2 []string) []string
 	SliceDifference(slice1, slice2 []string) []string
 	SliceUnion(slice1, slice2 []string) []string
-	GroupBy(slice []any, keyFunc func(any) any) map[any][]any
-	Reduce(slice []any, reduceFunc func(any, any) any, initialValue any) any
 }
 
 type CollectionUtil struct{}
@@ -220,40 +216,6 @@ func (c *CollectionUtil) ConvertToString(value any) string {
 	return fmt.Sprintf("%v", value)
 }
 
-// ConvertToMap converts a slice of key-value maps to a single map
-func (c *CollectionUtil) ConvertToMap(value any) (map[string]any, error) {
-	slice, ok := value.([]any)
-	if !ok {
-		return nil, fmt.Errorf("expected slice of interfaces for Map conversion, got %T", value)
-	}
-
-	result := make(map[string]any)
-	for i, item := range slice {
-		mapItem, ok := item.(map[string]any)
-		if !ok {
-			return nil, fmt.Errorf("expected map[string]any at index %d, got %T", i, item)
-		}
-
-		key, keyOk := mapItem["Key"].(string)
-		if !keyOk {
-			keyAny, exists := mapItem["Key"]
-			if !exists {
-				return nil, fmt.Errorf("missing 'Key' field at index %d", i)
-			}
-			key = c.ConvertToString(keyAny)
-		}
-
-		val, exists := mapItem["Value"]
-		if !exists {
-			return nil, fmt.Errorf("missing 'Value' field at index %d", i)
-		}
-
-		result[key] = val
-	}
-
-	return result, nil
-}
-
 // ConvertToSlice converts a string to slice using separator
 func (c *CollectionUtil) ConvertToSlice(value any, separator string) ([]string, error) {
 	strValue, ok := value.(string)
@@ -275,6 +237,28 @@ func (c *CollectionUtil) ConvertToSlice(value any, separator string) ([]string, 
 	}
 
 	return parts, nil
+}
+
+// ConvertToMap converts a slice to a map using a key extractor function
+func (c *CollectionUtil) ConvertToMap(slice any, keyExtractor func(any) string) (map[string]any, error) {
+	if slice == nil {
+		return map[string]any{}, nil
+	}
+
+	// Use reflection to handle different slice types
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice && rv.Kind() != reflect.Array {
+		return nil, fmt.Errorf("expected slice or array, got %T", slice)
+	}
+
+	result := make(map[string]any)
+	for i := 0; i < rv.Len(); i++ {
+		item := rv.Index(i).Interface()
+		key := keyExtractor(item)
+		result[key] = item
+	}
+
+	return result, nil
 }
 
 // SliceContains checks if a string slice contains a specific item
@@ -386,43 +370,6 @@ func (c *CollectionUtil) MapOmit(m map[string]any, keys ...string) map[string]an
 	return result
 }
 
-// DeepCopy creates a deep copy of any value (basic implementation)
-func (c *CollectionUtil) DeepCopy(src any) (any, error) {
-	if src == nil {
-		return nil, nil
-	}
-
-	switch v := src.(type) {
-	case map[string]any:
-		result := make(map[string]any)
-		for k, val := range v {
-			copied, err := c.DeepCopy(val)
-			if err != nil {
-				return nil, err
-			}
-			result[k] = copied
-		}
-		return result, nil
-	case []any:
-		result := make([]any, len(v))
-		for i, val := range v {
-			copied, err := c.DeepCopy(val)
-			if err != nil {
-				return nil, err
-			}
-			result[i] = copied
-		}
-		return result, nil
-	case []string:
-		result := make([]string, len(v))
-		copy(result, v)
-		return result, nil
-	default:
-		// For basic types, return as-is (they're copied by value)
-		return src, nil
-	}
-}
-
 // FindInSlice finds the first element in a slice that matches the predicate
 func (c *CollectionUtil) FindInSlice(slice []any, predicate func(any) bool) (any, bool) {
 	result := funk.Find(slice, predicate)
@@ -430,19 +377,6 @@ func (c *CollectionUtil) FindInSlice(slice []any, predicate func(any) bool) (any
 		return nil, false
 	}
 	return result, true
-}
-
-// Flatten flattens a nested slice structure (one level deep)
-func (c *CollectionUtil) Flatten(slice []any) []any {
-	var result []any
-	for _, item := range slice {
-		if subSlice, ok := item.([]any); ok {
-			result = append(result, subSlice...)
-		} else {
-			result = append(result, item)
-		}
-	}
-	return result
 }
 
 // SliceIntersection returns elements that exist in both slices
@@ -460,25 +394,4 @@ func (c *CollectionUtil) SliceDifference(slice1, slice2 []string) []string {
 func (c *CollectionUtil) SliceUnion(slice1, slice2 []string) []string {
 	combined := append(slice1, slice2...)
 	return funk.UniqString(combined)
-}
-
-// GroupBy groups slice elements by the result of keyFunc
-func (c *CollectionUtil) GroupBy(slice []any, keyFunc func(any) any) map[any][]any {
-	result := make(map[any][]any)
-
-	for _, item := range slice {
-		key := keyFunc(item)
-		result[key] = append(result[key], item)
-	}
-
-	return result
-}
-
-// Reduce applies a reducer function to accumulate slice elements into a single value
-func (c *CollectionUtil) Reduce(slice []any, reduceFunc func(any, any) any, initialValue any) any {
-	result := initialValue
-	for _, item := range slice {
-		result = reduceFunc(result, item)
-	}
-	return result
 }

@@ -7,9 +7,11 @@ type AssertionClient interface {
 	// Basic type getters
 	GetString(m map[string]any, key string) (string, bool)
 	GetStringRequired(m map[string]any, key string) (string, error)
+	GetStringOrEmpty(m map[string]any, key string) string
 	GetFloat64(m map[string]any, key string) (float64, bool)
 	GetMap(m map[string]any, key string) (map[string]any, bool)
 	GetSlice(m map[string]any, key string) ([]any, bool)
+	GetStringSlice(m map[string]any, key string) ([]string, bool)
 	GetBool(m map[string]any, key string) (bool, bool)
 
 	// Integer type getters
@@ -34,6 +36,7 @@ type AssertionClient interface {
 	HasKey(m map[string]any, key string) bool
 	HasNonEmptyString(m map[string]any, key string) bool
 	ValidateRequired(m map[string]any, keys ...string) error
+	GetKeys(m map[string]any) []string
 }
 
 // AssertionUtil provides safe type assertion utilities for map[string]any data structures
@@ -63,6 +66,14 @@ func (a *AssertionUtil) GetStringRequired(m map[string]any, key string) (string,
 	return "", fmt.Errorf("required field '%s' not found or empty", key)
 }
 
+// GetStringOrEmpty safely extracts a string value or returns empty string if not found
+func (a *AssertionUtil) GetStringOrEmpty(m map[string]any, key string) string {
+	if str, ok := a.GetString(m, key); ok {
+		return str
+	}
+	return ""
+}
+
 // GetFloat64 safely extracts a float64 value from a map
 func (a *AssertionUtil) GetFloat64(m map[string]any, key string) (float64, bool) {
 	if val, exists := m[key]; exists {
@@ -88,6 +99,30 @@ func (a *AssertionUtil) GetSlice(m map[string]any, key string) ([]any, bool) {
 	if val, exists := m[key]; exists {
 		if slice, ok := val.([]any); ok && len(slice) > 0 {
 			return slice, true
+		}
+	}
+	return nil, false
+}
+
+// GetStringSlice safely extracts a slice of strings from a map
+func (a *AssertionUtil) GetStringSlice(m map[string]any, key string) ([]string, bool) {
+	if val, exists := m[key]; exists {
+		// Handle []string directly
+		if slice, ok := val.([]string); ok && len(slice) > 0 {
+			return slice, true
+		}
+		// Handle []any and convert to []string
+		if slice, ok := val.([]any); ok && len(slice) > 0 {
+			result := make([]string, len(slice))
+			for i, item := range slice {
+				if str, ok := item.(string); ok {
+					result[i] = str
+				} else {
+					// If any item is not a string, return false
+					return nil, false
+				}
+			}
+			return result, true
 		}
 	}
 	return nil, false
@@ -266,4 +301,13 @@ func (a *AssertionUtil) ValidateRequired(m map[string]any, keys ...string) error
 		return fmt.Errorf("required fields missing or empty: %v", missing)
 	}
 	return nil
+}
+
+// GetKeys returns all keys from the map as a slice
+func (a *AssertionUtil) GetKeys(m map[string]any) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
 }

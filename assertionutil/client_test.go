@@ -125,6 +125,51 @@ func TestGetStringRequired(t *testing.T) {
 	}
 }
 
+func TestGetStringOrEmpty(t *testing.T) {
+	util := NewAssertionUtil()
+
+	tests := []struct {
+		name     string
+		data     map[string]any
+		key      string
+		expected string
+	}{
+		{
+			name:     "valid string",
+			data:     map[string]any{"key": "value"},
+			key:      "key",
+			expected: "value",
+		},
+		{
+			name:     "missing key",
+			data:     map[string]any{},
+			key:      "key",
+			expected: "",
+		},
+		{
+			name:     "empty string",
+			data:     map[string]any{"key": ""},
+			key:      "key",
+			expected: "",
+		},
+		{
+			name:     "wrong type",
+			data:     map[string]any{"key": 123},
+			key:      "key",
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := util.GetStringOrEmpty(tt.data, tt.key)
+			if result != tt.expected {
+				t.Errorf("GetStringOrEmpty() = %q, want %q", result, tt.expected)
+			}
+		})
+	}
+}
+
 func TestGetFloat64(t *testing.T) {
 	util := NewAssertionUtil()
 
@@ -400,6 +445,73 @@ func TestGetMap(t *testing.T) {
 			result, ok := util.GetMap(tt.data, tt.key)
 			if !reflect.DeepEqual(result, tt.expected) || ok != tt.ok {
 				t.Errorf("GetMap() = (%v, %v), want (%v, %v)", result, ok, tt.expected, tt.ok)
+			}
+		})
+	}
+}
+
+func TestGetStringSlice(t *testing.T) {
+	util := NewAssertionUtil()
+
+	tests := []struct {
+		name     string
+		data     map[string]any
+		key      string
+		expected []string
+		ok       bool
+	}{
+		{
+			name:     "valid string slice",
+			data:     map[string]any{"key": []string{"a", "b", "c"}},
+			key:      "key",
+			expected: []string{"a", "b", "c"},
+			ok:       true,
+		},
+		{
+			name:     "valid any slice with strings",
+			data:     map[string]any{"key": []any{"a", "b", "c"}},
+			key:      "key",
+			expected: []string{"a", "b", "c"},
+			ok:       true,
+		},
+		{
+			name:     "empty slice",
+			data:     map[string]any{"key": []string{}},
+			key:      "key",
+			expected: nil,
+			ok:       false,
+		},
+		{
+			name:     "missing key",
+			data:     map[string]any{},
+			key:      "key",
+			expected: nil,
+			ok:       false,
+		},
+		{
+			name:     "any slice with non-string",
+			data:     map[string]any{"key": []any{"a", 123, "c"}},
+			key:      "key",
+			expected: nil,
+			ok:       false,
+		},
+		{
+			name:     "wrong type",
+			data:     map[string]any{"key": "not a slice"},
+			key:      "key",
+			expected: nil,
+			ok:       false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, ok := util.GetStringSlice(tt.data, tt.key)
+			if ok != tt.ok {
+				t.Errorf("GetStringSlice() ok = %v, want %v", ok, tt.ok)
+			}
+			if !reflect.DeepEqual(result, tt.expected) {
+				t.Errorf("GetStringSlice() = %v, want %v", result, tt.expected)
 			}
 		})
 	}
