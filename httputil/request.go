@@ -57,6 +57,17 @@ func (h *HTTPUtil) Put(ctx context.Context, url string, body io.Reader, headers 
 	})
 }
 
+// Patch sends an HTTP PATCH request
+func (h *HTTPUtil) Patch(ctx context.Context, url string, body io.Reader, headers map[string]string) (*http.Response, error) {
+	return h.doRequest(RequestOptions{
+		Method:  http.MethodPatch,
+		URL:     url,
+		Body:    body,
+		Headers: headers,
+		Context: ctx,
+	})
+}
+
 // Delete sends an HTTP DELETE request
 func (h *HTTPUtil) Delete(ctx context.Context, url string, headers map[string]string) (*http.Response, error) {
 	return h.doRequest(RequestOptions{

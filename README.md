@@ -13,7 +13,7 @@ A collection of reusable utility packages for Go applications. This library prov
 ### Latest Stable Version
 
 ```bash
-go get github.com/mustanish/common-utils/v2@v2.2.0
+go get github.com/mustanish/common-utils/v2@v2.3.0
 ```
 
 ### Latest Development Version
@@ -26,7 +26,7 @@ go get github.com/mustanish/common-utils/v2@latest
 
 ```bash
 # Install a specific version
-go get github.com/mustanish/common-utils/v2@v2.2.0
+go get github.com/mustanish/common-utils/v2@v2.3.0
 ```
 
 ## Quick Start
@@ -63,7 +63,7 @@ tomorrow := dateUtil.AddDays(dateUtil.Today(), 1)
 
 | Package | Purpose | Key Methods |
 |---------|---------|-------------|
-| **httputil** | HTTP client with retry logic | `Get`, `Post`, `DecodeJSON` |
+| **httputil** | HTTP client with retry logic | `Get`, `Post`, `Put`, `Patch`, `Delete`, `DecodeJSON` |
 | **assertionutil** | Safe type extraction | `GetStringOrEmpty`, `GetStringSlice`, `GetInt` |
 | **collectionutil** | Collection operations | `SliceUnique`, `ConvertToMap`, `MapFilter` |
 | **dateutil** | Date/time utilities | `Parse`, `AddDays`, `IsAfter`, `NowUTC` |
@@ -71,6 +71,7 @@ tomorrow := dateUtil.AddDays(dateUtil.Today(), 1)
 ## Features
 
 ### HttpUtil
+- Complete HTTP method support (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`)
 - Automatic retry with exponential backoff
 - Rate limiting and context support
 - JSON request/response helpers
@@ -98,7 +99,14 @@ tomorrow := dateUtil.AddDays(dateUtil.Today(), 1)
 
 ```go
 client := httputil.NewHTTPUtil(logger, nil)
+
+// GET request
 resp, err := client.Get(ctx, "https://api.example.com", headers)
+
+// PATCH request for partial updates
+patchData := bytes.NewBufferString(`{"status":"updated"}`)
+resp, err = client.Patch(ctx, "https://api.example.com/resource/123", patchData, headers)
+
 if client.IsSuccess(resp) {
     var result map[string]any
     client.DecodeJSON(resp, &result)

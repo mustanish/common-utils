@@ -1149,6 +1149,6 @@ func BenchmarkValidateRequired(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		util.ValidateRequired(data, keys...)
+		_ = util.ValidateRequired(data, keys...)
 	}
 }

@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v2.3.0] - 2025-10-16
+
+### Added
+- **HTTPUtil**: New `Patch()` method for HTTP PATCH requests with full test coverage
+- **Security**: Enhanced security scanning with `gosec` tool
+
+### Changed
+- **Build Tools**: Updated security scanning from `nancy` to `gosec` for better vulnerability detection
+- **Code Quality**: Improved test code by properly handling ignored return values
+
 ## [v2.2.0] - 2025-10-05
 
 ### Changed

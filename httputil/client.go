@@ -63,6 +63,7 @@ type HTTPClient interface {
 	Get(ctx context.Context, url string, headers map[string]string) (*http.Response, error)
 	Post(ctx context.Context, url string, body io.Reader, headers map[string]string) (*http.Response, error)
 	Put(ctx context.Context, url string, body io.Reader, headers map[string]string) (*http.Response, error)
+	Patch(ctx context.Context, url string, body io.Reader, headers map[string]string) (*http.Response, error)
 	Delete(ctx context.Context, url string, headers map[string]string) (*http.Response, error)
 	SetRetryHook(hook func(attempt int, resp *http.Response, err error))
 	SetSuccessHook(hook func(resp *http.Response, options RequestOptions))

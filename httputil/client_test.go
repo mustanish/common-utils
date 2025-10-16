@@ -98,7 +98,7 @@ func TestHTTPUtil_Get_Success(t *testing.T) {
 	util := NewHTTPUtil(logger, nil).(*HTTPUtil)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
-		w.Write([]byte("ok"))
+		_, _ = w.Write([]byte("ok"))
 	}))
 	defer server.Close()
 	resp, err := util.Get(context.Background(), server.URL, nil)
@@ -117,7 +117,7 @@ func TestHTTPUtil_Post_Success(t *testing.T) {
 	util := NewHTTPUtil(logger, nil).(*HTTPUtil)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(201)
-		w.Write([]byte("created"))
+		_, _ = w.Write([]byte("created"))
 	}))
 	defer server.Close()
 	resp, err := util.Post(context.Background(), server.URL, bytes.NewBufferString("data"), nil)
@@ -136,7 +136,7 @@ func TestHTTPUtil_Put_Success(t *testing.T) {
 	util := NewHTTPUtil(logger, nil).(*HTTPUtil)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
-		w.Write([]byte("updated"))
+		_, _ = w.Write([]byte("updated"))
 	}))
 	defer server.Close()
 	resp, err := util.Put(context.Background(), server.URL, bytes.NewBufferString("data"), nil)
@@ -146,6 +146,204 @@ func TestHTTPUtil_Put_Success(t *testing.T) {
 	data, _ := util.ReadBody(resp)
 	if string(data) != "updated" {
 		t.Errorf("Expected body 'updated', got '%s'", string(data))
+	}
+}
+
+func TestHTTPUtil_Patch_Success(t *testing.T) {
+	logger := logrus.New()
+	logger.SetLevel(logrus.ErrorLevel)
+	util := NewHTTPUtil(logger, nil).(*HTTPUtil)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Verify method
+		if r.Method != http.MethodPatch {
+			t.Errorf("Expected PATCH method, got %s", r.Method)
+		}
+
+		// Verify body
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Errorf("Failed to read request body: %v", err)
+		}
+		expectedBody := "patch_data"
+		if string(body) != expectedBody {
+			t.Errorf("Expected body '%s', got '%s'", expectedBody, string(body))
+		}
+
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte("patched"))
+	}))
+	defer server.Close()
+
+	resp, err := util.Patch(context.Background(), server.URL, bytes.NewBufferString("patch_data"), nil)
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+
+	data, _ := util.ReadBody(resp)
+	if string(data) != "patched" {
+		t.Errorf("Expected body 'patched', got '%s'", string(data))
+	}
+
+	if resp.StatusCode != 200 {
+		t.Errorf("Expected status code 200, got %d", resp.StatusCode)
+	}
+}
+
+func TestHTTPUtil_Patch_WithHeaders(t *testing.T) {
+	logger := logrus.New()
+	logger.SetLevel(logrus.ErrorLevel)
+	util := NewHTTPUtil(logger, nil).(*HTTPUtil)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Verify headers
+		if r.Header.Get("Content-Type") != "application/json" {
+			t.Errorf("Expected Content-Type 'application/json', got '%s'", r.Header.Get("Content-Type"))
+		}
+		if r.Header.Get("X-Custom-Header") != "test-value" {
+			t.Errorf("Expected X-Custom-Header 'test-value', got '%s'", r.Header.Get("X-Custom-Header"))
+		}
+
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte("success"))
+	}))
+	defer server.Close()
+
+	headers := map[string]string{
+		"Content-Type":    "application/json",
+		"X-Custom-Header": "test-value",
+	}
+
+	resp, err := util.Patch(context.Background(), server.URL, bytes.NewBufferString(`{"field":"value"}`), headers)
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+
+	if resp.StatusCode != 200 {
+		t.Errorf("Expected status code 200, got %d", resp.StatusCode)
+	}
+}
+
+func TestHTTPUtil_Patch_ErrorHandling(t *testing.T) {
+	logger := logrus.New()
+	logger.SetLevel(logrus.ErrorLevel)
+	util := NewHTTPUtil(logger, nil).(*HTTPUtil)
+
+	tests := []struct {
+		name           string
+		serverHandler  http.HandlerFunc
+		expectedStatus int
+		shouldError    bool
+	}{
+		{
+			name: "404 Not Found",
+			serverHandler: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(404)
+				_, _ = w.Write([]byte("not found"))
+			},
+			expectedStatus: 404,
+			shouldError:    false,
+		},
+		{
+			name: "400 Bad Request",
+			serverHandler: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(400)
+				_, _ = w.Write([]byte("bad request"))
+			},
+			expectedStatus: 400,
+			shouldError:    false,
+		},
+		{
+			name: "422 Unprocessable Entity",
+			serverHandler: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(422)
+				_, _ = w.Write([]byte("validation error"))
+			},
+			expectedStatus: 422,
+			shouldError:    false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(tt.serverHandler)
+			defer server.Close()
+
+			resp, err := util.Patch(context.Background(), server.URL, bytes.NewBufferString("data"), nil)
+
+			if tt.shouldError && err == nil {
+				t.Error("Expected error but got none")
+			}
+
+			if !tt.shouldError && err != nil {
+				t.Errorf("Unexpected error: %v", err)
+			}
+
+			if resp != nil && resp.StatusCode != tt.expectedStatus {
+				t.Errorf("Expected status code %d, got %d", tt.expectedStatus, resp.StatusCode)
+			}
+		})
+	}
+}
+
+func TestHTTPUtil_Patch_InvalidURL(t *testing.T) {
+	logger := logrus.New()
+	logger.SetLevel(logrus.ErrorLevel)
+	util := NewHTTPUtil(logger, nil).(*HTTPUtil)
+
+	// Use a malformed URL that will fail immediately
+	_, err := util.Patch(context.Background(), "://invalid-url", nil, nil)
+	if err == nil {
+		t.Error("Expected error for invalid URL, got none")
+	}
+}
+
+func TestHTTPUtil_Patch_ContextCancellation(t *testing.T) {
+	logger := logrus.New()
+	logger.SetLevel(logrus.ErrorLevel)
+	util := NewHTTPUtil(logger, nil).(*HTTPUtil)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Simulate slow server
+		time.Sleep(100 * time.Millisecond)
+		w.WriteHeader(200)
+	}))
+	defer server.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+
+	_, err := util.Patch(ctx, server.URL, bytes.NewBufferString("data"), nil)
+	if err == nil {
+		t.Error("Expected context timeout error, got none")
+	}
+}
+
+func TestHTTPUtil_Patch_NilBody(t *testing.T) {
+	logger := logrus.New()
+	logger.SetLevel(logrus.ErrorLevel)
+	util := NewHTTPUtil(logger, nil).(*HTTPUtil)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Errorf("Failed to read request body: %v", err)
+		}
+		if len(body) != 0 {
+			t.Errorf("Expected empty body, got %s", string(body))
+		}
+
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte("ok"))
+	}))
+	defer server.Close()
+
+	resp, err := util.Patch(context.Background(), server.URL, nil, nil)
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+
+	if resp.StatusCode != 200 {
+		t.Errorf("Expected status code 200, got %d", resp.StatusCode)
 	}
 }
 
